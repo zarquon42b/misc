@@ -5,6 +5,14 @@
 using namespace std;
 using namespace Eigen;
 
+Matrix4f mirmat(bool mir) {
+  Matrix4f mirmat = Matrix4f::Zero();
+  mirmat.diagonal().fill(1);
+  if (mir)
+    mirmat(1,1) = -1;
+  return mirmat;
+}
+
 std::vector<float> readCSV(string filename) {
   ifstream infile;
   vector<float>array;
@@ -34,7 +42,7 @@ MatrixXf crossprod(MatrixXf& X, MatrixXf& Y) {
   MatrixXf out = X.transpose()*Y;
   return out;
 }
-Matrix4f rotationmat(Matrix3f& gam, Vector3f& trans, Vector3f& transy, float beta) {
+Matrix4f rotationmat(Matrix3f& gam, Vector3f& trans, Vector3f& transy, float beta,bool forceReflect) {
   Matrix4f hgamm, htrans, htransy, scalemat;
   hgamm = htrans = htransy = scalemat = Matrix4f::Zero();
   hgamm(3,3) = 1;
@@ -46,7 +54,8 @@ Matrix4f rotationmat(Matrix3f& gam, Vector3f& trans, Vector3f& transy, float bet
   scalemat.diagonal().fill(1);
   Matrix3f b;b.fill(0.0); b.diagonal().fill(beta);
   scalemat.topLeftCorner(3,3) = b;
-  Matrix4f out = htrans*scalemat*hgamm.transpose()*htransy;
+  Matrix4f mir4 = mirmat(forceReflect);
+  Matrix4f out = htrans*scalemat*hgamm.transpose()*mir4*htransy;
   return out;
 }
   
@@ -80,14 +89,27 @@ void refcheck(MatrixXf& u, MatrixXf& v) {
   }
 }
 
+void help() {
+  cout << "  USAGE: " << endl;
+  cout << "  rotate [--scale | -- reflect | --forceReflect] -X fixedLandmarks.txt -Y movingLandmarks.txt" << endl;
+  cout << endl;
+  cout << "        --scale            allow scaling" << endl;
+  cout << "        --reflect          allow reflection" << endl;
+  cout << "        --forceReflect     force reflection" << endl;
+  cout << "        -X                 Fix landmarks: pass text file with all coordinates in one row, separated by comma and like x1,x2,x3,..,y1,y2,y3,..,z1,z2,z3,..." << endl;
+  cout << "        -Y                 Moving landmarks: pass text file with all coordinates in one row, separated by comma and like x1,x2,x3,..,y1,y2,y3,..,z1,z2,z3,..." << endl;
+}
 int main(int argc, char **argv) {
   bool scaling = false;
   bool reflect = false;
+  bool forceReflect = false;
   char xfile[256] = "n";
   char yfile[256] = "n";
   for (int i = 1; i < argc; i++) {
     if (strcmp("--scale", argv[i]) == 0)
       scaling = true;
+    if (strcmp("--forceReflect", argv[i]) == 0)
+      forceReflect = true;
     if (strcmp("--reflect", argv[i]) == 0)
       reflect = true;
     if (strcmp("-X", argv[i]) == 0) {
@@ -95,6 +117,10 @@ int main(int argc, char **argv) {
     }
     if (strcmp("-Y", argv[i]) == 0) {
       strcpy(yfile,argv[i+1]);
+    }
+    if (strcmp("--help", argv[i]) == 0 || strcmp("?", argv[i]) == 0) {
+      help();
+      return 1;
     }
   }
  
@@ -121,6 +147,10 @@ int main(int argc, char **argv) {
   }
   MatrixXf X1 = scale(X);
   MatrixXf Y1 = scale(Y); 
+  if (forceReflect) {
+    Matrix4f mir = mirmat(true);
+    Y1 = Y1*mir.topLeftCorner(3,3);
+  }
   float beta = 1;
   Vector3f trans = X.row(0)-X1.row(0);
   Vector3f transy = Y.row(0)-Y1.row(0);
@@ -134,7 +164,7 @@ int main(int argc, char **argv) {
     beta = svd.singularValues().sum()/ctrace(Y1);
   }
   Matrix3f gamm = v*u.transpose();
-  Matrix4f trafo = rotationmat(gamm,trans,transy,beta);
+  Matrix4f trafo = rotationmat(gamm,trans,transy,beta,forceReflect);
   MatrixXf Yrot = hom2mat(trafo*mat2hom(Y));
   cout << "here comes the transformation:" << endl << trafo << endl << endl;
   cout << "here come the transformed coordinates:" << endl <<Yrot << endl << endl;
