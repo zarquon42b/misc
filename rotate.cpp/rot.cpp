@@ -32,17 +32,17 @@ std::vector<float> readCSV(string filename) {
   return array;
 }
 
-double ctrace(MatrixXf& X) {
+double ctrace(const MatrixXf& X) {
   MatrixXf XtX = X.transpose()*X;
   double out = XtX.diagonal().sum();
   return out;
 }
 
-MatrixXf crossprod(MatrixXf& X, MatrixXf& Y) {
+MatrixXf crossprod(const MatrixXf& X, const MatrixXf& Y) {
   MatrixXf out = X.transpose()*Y;
   return out;
 }
-Matrix4f rotationmat(Matrix3f& gam, Vector3f& trans, Vector3f& transy, float beta,bool forceReflect) {
+Matrix4f rotationmat(const Matrix3f& gam, const Vector3f& trans, const Vector3f& transy, float beta, bool forceReflect) {
   Matrix4f hgamm, htrans, htransy, scalemat;
   hgamm = htrans = htransy = scalemat = Matrix4f::Zero();
   hgamm(3,3) = 1;
@@ -59,13 +59,13 @@ Matrix4f rotationmat(Matrix3f& gam, Vector3f& trans, Vector3f& transy, float bet
   return out;
 }
   
-MatrixXf mat2hom(MatrixXf& in){
+MatrixXf mat2hom(const MatrixXf& in){
   MatrixXf hom(in.cols()+1,in.rows());
   hom.fill(1);
   hom.topLeftCorner(3,hom.cols()) = in.transpose();
   return hom;
 }
-MatrixXf hom2mat(MatrixXf in){
+MatrixXf hom2mat(const MatrixXf& in){
   MatrixXf unhom(in.cols(),in.rows()-1);
   unhom = in.topLeftCorner(3,in.cols());
   return unhom.transpose();
