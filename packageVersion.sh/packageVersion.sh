@@ -197,15 +197,15 @@ sed -i "s/Date: *.*.*/Date: $dat/g" DESCRIPTION
 if [ ! -z $build ];then
     cd $origdir
     tarball=$(pwd)/$pckgname"_"$version".tar.gz"
-    echo "  * Creating tarball $pckgname _$version.tar.gz"
+    echo "  INFO: Creating tarball $pckgname _$version.tar.gz"
     R CMD build $packagedir
 fi
 
 if [ ! -z $dratdir ];then
-    echo "  * Updating drat repo at $dratdir"
+    echo "  INFO: Updating drat repo at $dratdir"
     Rscript -e "drat::insertPackage('$tarball','$dratdir')"
     if [ -z $remove ];then
-	echo "  * removing $tarball as only update drat is requested"
+	echo "  INFO: removing $tarball as only a drat update is requested"
 	rm $tarball
     fi
     
