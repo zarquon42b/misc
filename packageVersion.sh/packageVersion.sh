@@ -197,8 +197,10 @@ sed -i "s/Date: *.*.*/Date: $dat/g" DESCRIPTION
 if [ ! -z $build ];then
     cd $origdir
     tarball=$(pwd)/$pckgname"_"$version".tar.gz"
+    echo " "
     echo "  INFO: Creating tarball $pckgname _$version.tar.gz"
-    R CMD build $packagedir
+    echo " "
+    R CMD build $packagedir 
 fi
 
 if [ ! -z $dratdir ];then
