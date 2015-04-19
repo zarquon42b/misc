@@ -85,7 +85,7 @@ testvercomp () {
 
 daily=0
 force=0
-while getopts "p:v:dhfsbu:" opt; do
+while getopts ":p:v:dhfsbu:" opt; do
     case "$opt" in
         p)
             packagedir=$OPTARG
@@ -110,6 +110,9 @@ while getopts "p:v:dhfsbu:" opt; do
 	    ;;
 	u)
 	    dratdir=$OPTARG
+	    build=1
+	    ;;
+	:  ) echo "Missing option argument for -$OPTARG" >&2; exit 1
 	    
     esac
 done
@@ -186,6 +189,7 @@ fi
 
 sed -i "s/Version: *.*.*.*/Version: $version/g" DESCRIPTION
 sed -i "s/Date: *.*.*/Date: $dat/g" DESCRIPTION
+
 
 ### build tarball
 if [ ! -z $build ];then
