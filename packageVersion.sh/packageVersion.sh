@@ -23,7 +23,7 @@ roxypox () {
 if [ -z $1 ];then
     type="fast"
 else
-    type=$2
+    type=$1
 fi
 
 if [ $type == "full" ]; then
@@ -108,10 +108,11 @@ while getopts ":p:v:dhfsbu:" opt; do
 	    ;;
 	b)
 	    build=1
+	    remove=0
 	    ;;
 	u)
 	    dratdir=$OPTARG
-	    build=1
+	    build=2
 	    ;;
 	:  ) echo "Missing option argument for -$OPTARG" >&2; exit 1
 	    
@@ -120,11 +121,11 @@ done
 roxymeth="full"
 
 if [ -z $packagedir ];then
-    echo "  please select package directory"
+    echo "   ERROR: please select package directory"
     usage
     exit 1
 fi
-echo "  Selected directory is $packagedir"
+echo "   INFO: Selected directory is $packagedir"
 
 
 
@@ -135,11 +136,11 @@ pckgname="$(echo -e "${pckgname}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]
 ### select package to build
 if [ ! -e "R/$pckgname-package.R" ];then
     noR=1
-    echo "  No file named $pckgname-package.R found"
+    echo "   INFO: No file named $pckgname-package.R found"
     #exit 1
     
 fi
-echo "Updating $pckgname"
+
 dat=$(date +%Y-%m-%d)
 datstring=$(date +%y%m%d)
 
@@ -162,18 +163,18 @@ elif [ ! -z $newvn ];then
     version=$newvn
 else
 
-    echo " Please enter a version number!" 
-    echo " Current $vn" 
+    echo "   ERROR: Please enter a version number!" 
+    echo "   Current $vn" 
     usage
     exit 1
 fi
-
-echo "  new version is $version"
-echo "  old version is $origversion"
-echo $(testvercomp $version $origversion ">")
+echo "   INFO: Changing $pckgname to version $version"
+echo "   INFO: new version is $version"
+echo "   INFO: old version is $origversion"
+#echo $(testvercomp $version $origversion ">")
 if [ $(testvercomp $version $origversion ">") == "fail" ] && [ $force == 0 ]; then
-    echo "  New version not higher than old one"
-    echo "  you can force a downgrade using the -f flag"
+    echo "   ERROR: New version not higher than old one"
+    echo "   you can force a downgrade using the -f flag"
     
     exit 1
     
@@ -181,10 +182,10 @@ fi
 if [ -e R/$pckgname-package.R ];then
     target="R/$pckgname-package.R"
     
-    echo "   * doing stuff using roxygen2"
+    echo "   * Doing stuff using roxygen2"
     sed -i "s/Version: \\\tab *.*.*\\\cr/Version: \\\tab $version\\\cr/g" $target
     sed -i "s/Date: \\\tab *.*.*\\\cr/Date: \\\tab $dat\\\cr/g" $target
-    roxypox  $simple
+    roxypox  $simple 
 fi
 #fi
 
@@ -196,12 +197,16 @@ sed -i "s/Date: *.*.*/Date: $dat/g" DESCRIPTION
 if [ ! -z $build ];then
     cd $origdir
     tarball=$(pwd)/$pckgname"_"$version".tar.gz"
-    echo "  Creating tarball $pckgname _$version.tar.gz"
+    echo "  * Creating tarball $pckgname _$version.tar.gz"
     R CMD build $packagedir
 fi
 
 if [ ! -z $dratdir ];then
     echo "  * Updating drat repo at $dratdir"
     Rscript -e "drat::insertPackage('$tarball','$dratdir')"
+    if [ -z $remove ];then
+	echo "  * removing $tarball as only update drat is requested"
+	rm $tarball
+    fi
     
 fi
