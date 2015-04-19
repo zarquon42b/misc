@@ -3,10 +3,11 @@ pckgname="nix"
 
 function usage {
     echo " "
-    echo "usage: changeGen -p package_dir [-d ] [-v ][ -h] [-f ] [-s] [-b] [-h]"
+    echo "usage: packageVersion.sh -p package_dir [-d ] [-v new_version][ -h] [-f ] [-s] [-b] [-u dratdir] [-h]"
     echo " "
     echo "    -p package_dir     select package directory"
     echo "    -d                 bump version to daily"
+    echo "    -v new_version     specify new version number"
     echo "    -f                 allow version number to be <= the old one"
     echo "    -s                 simple roxygenisation off"
     echo "    -b                 build package tarball"
