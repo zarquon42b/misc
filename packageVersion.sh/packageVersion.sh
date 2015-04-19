@@ -182,7 +182,7 @@ fi
 if [ -e R/$pckgname-package.R ];then
     target="R/$pckgname-package.R"
     
-    echo "   * Doing stuff using roxygen2"
+    echo "   INFO: Found file $target. Update and roxygenize $pckgname"
     sed -i "s/Version: \\\tab *.*.*\\\cr/Version: \\\tab $version\\\cr/g" $target
     sed -i "s/Date: \\\tab *.*.*\\\cr/Date: \\\tab $dat\\\cr/g" $target
     roxypox  $simple 
