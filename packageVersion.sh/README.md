@@ -13,5 +13,5 @@ packageVersion.sh -p package_dir [-d ] [-v new_version][ -h] [-f ] [-s] [-b] [-u
     -s                 simple roxygenisation off
     -b                 build package tarball
     -u dratdir         specify local drat repo: update drat repo
-    -h               
+    -h                 print this help
 ```
