@@ -131,7 +131,7 @@ echo "   INFO: Selected directory is $packagedir"
 
 origdir=$(pwd)
 cd $packagedir
-pckgname=$(grep Package: DESCRIPTION | awk 'BEGIN {FS=":"};{print $2}')
+pckgname=$(grep ^Package: DESCRIPTION | awk 'BEGIN {FS=":"};{print $2}')
 pckgname="$(echo -e "${pckgname}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
 ### select package to build
 if [ ! -e "R/$pckgname-package.R" ];then
