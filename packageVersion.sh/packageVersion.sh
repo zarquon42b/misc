@@ -3,7 +3,7 @@ pckgname="nix"
 
 function usage {
     echo " "
-    echo "usage: packageVersion.sh -p package_dir [-d ] [-v new_version][ -h] [-f ] [-s] [-b] [-u dratdir] [-h]"
+    echo " usage: packageVersion.sh -p package_dir [-d ] [-v new_version][ -h] [-f ] [-s] [-b] [-r] [-u dratdir] [-h]"
     echo " "
     echo "    -p package_dir     select package directory"
     echo "    -d                 bump version to daily"
@@ -11,6 +11,7 @@ function usage {
     echo "    -f                 allow version number to be <= the old one"
     echo "    -s                 simple roxygenisation off"
     echo "    -b                 build package tarball"
+    echo "    -r                 do not (re)build package vignette"
     echo "    -u dratdir         specify local drat repo: update drat repo"
     echo "    -h                 print this help"
     echo " "
@@ -86,35 +87,22 @@ testvercomp () {
 
 daily=0
 force=0
-while getopts ":p:v:dhfsbu:" opt; do
+while getopts ":p:v:dhfsbru:" opt; do
     case "$opt" in
-        p)
-            packagedir=$OPTARG
-	    VPNNAME=$(nmcli -t -f NAME,uuid c| grep "$VPNNAME" |cut -d ":" -f1 | head -1)
-
-            ;;
-        v)  newvn=$OPTARG
-            ;;
-	d) daily=1
-	    ;;
-	h)
-	    usage
-	    ;;
-	f)
-	    force=1
-	   ;;
-	s)
-	    simple="full"
-	    ;;
-	b)
-	    build=1
+        p)  packagedir=$OPTARG;;
+        v)  newvn=$OPTARG ;;
+	d)  daily=1;;
+	h)  usage;;
+	f)  force=1;;
+	s)  simple="full";;
+	b)  build=1
 	    remove=0
 	    ;;
-	u)
-	    dratdir=$OPTARG
+	r)  Ropts="--no-build-vignettes ";;
+	u)  dratdir=$OPTARG
 	    build=2
 	    ;;
-	:  ) echo "Missing option argument for -$OPTARG" >&2; exit 1
+	: ) echo "Missing option argument for -$OPTARG" >&2; exit 1
 	    
     esac
 done
@@ -198,9 +186,10 @@ if [ ! -z $build ];then
     cd $origdir
     tarball=$(pwd)/$pckgname"_"$version".tar.gz"
     echo " "
-    echo "  INFO: Creating tarball $pckgname _$version.tar.gz"
+    echo "  INFO: Creating tarball $tarball"
     echo " "
-    R CMD build $packagedir 
+    
+    R CMD build $Ropts$packagedir 
 fi
 
 if [ ! -z $dratdir ];then
