@@ -3,7 +3,7 @@ pckgname="nix"
 
 function usage {
     echo " "
-    echo " usage: packageVersion.sh -p package_dir [-d ] [-v new_version][ -h] [-f ] [-s] [-b] [-r] [-u dratdir] [-h]"
+    echo " Usage: packageVersion.sh -p package_dir [-d ] [-v new_version][ -h] [-f ] [-s] [-b] [-r] [-u dratdir] [-h]"
     echo " "
     echo "    -p package_dir     select package directory"
     echo "    -d                 bump version to daily"
@@ -15,23 +15,25 @@ function usage {
     echo "    -u dratdir         specify local drat repo: update drat repo"
     echo "    -h                 print this help"
     echo " "
+    echo " Details: if -v and -d are not set, the tarball will be created and (if -u flag is set) added to the specified drat directory"
+    echo " "
     
     exit
 }
 
 roxypox () {
 
-if [ -z $1 ];then
-    type="fast"
-else
-    type=$1
-fi
+    if [ -z $1 ];then
+	type="fast"
+    else
+	type=$1
+    fi
 
-if [ $type == "full" ]; then
-    Rscript -e 'require(devtools);require(methods);document(".")'
-else
-    Rscript -e 'require(roxygen2);require(methods);roxygenise(".")'
-fi
+    if [ $type == "full" ]; then
+	Rscript -e 'require(devtools);require(methods);document(".")'
+    else
+	Rscript -e 'require(roxygen2);require(methods);roxygenise(".")'
+    fi
 
 }
 stripspace () {
@@ -140,7 +142,7 @@ origversion=$prev
 ### check for version number ###
 
 if [ $daily == 1 ]; then
-   
+    
     laststring=${prev##*.}
     if [ ${#laststring} == 6 ]; then
 	prev=${prev%.*}
@@ -149,42 +151,50 @@ if [ $daily == 1 ]; then
     
 elif [ ! -z $newvn ];then
     version=$newvn
-else
+elif [ -z $build ];then
 
     echo "   ERROR: Please enter a version number!" 
     echo "   Current $vn" 
     usage
     exit 1
 fi
-echo "   INFO: Changing $pckgname to version $version"
-echo "   INFO: new version is $version"
-echo "   INFO: old version is $origversion"
-#echo $(testvercomp $version $origversion ">")
-if [ $(testvercomp $version $origversion ">") == "fail" ] && [ $force == 0 ]; then
-    echo "   ERROR: New version not higher than old one"
-    echo "   you can force a downgrade using the -f flag"
+if [ ! -z $version ];then
+    echo "   INFO: Changing $pckgname to version $version"
+    echo "   INFO: new version is $version"
+    echo "   INFO: old version is $origversion"
+    #echo $(testvercomp $version $origversion ">")
+    if [ $(testvercomp $version $origversion ">") == "fail" ] && [ $force == 0 ]; then
+	echo "   ERROR: New version not higher than old one"
+	echo "   you can force a downgrade using the -f flag"
+	
+	exit 1
+	
+    fi
+    if [ -e R/$pckgname-package.R ];then
+	target="R/$pckgname-package.R"
+	
+	echo "   INFO: Found file $target. Update and roxygenize $pckgname"
+	sed -i "s/Version: \\\tab *.*.*\\\cr/Version: \\\tab $version\\\cr/g" $target
+	sed -i "s/Date: \\\tab *.*.*\\\cr/Date: \\\tab $dat\\\cr/g" $target
+	roxypox  $simple 
     
-    exit 1
-    
-fi
-if [ -e R/$pckgname-package.R ];then
-    target="R/$pckgname-package.R"
-    
-    echo "   INFO: Found file $target. Update and roxygenize $pckgname"
-    sed -i "s/Version: \\\tab *.*.*\\\cr/Version: \\\tab $version\\\cr/g" $target
-    sed -i "s/Date: \\\tab *.*.*\\\cr/Date: \\\tab $dat\\\cr/g" $target
-    roxypox  $simple 
-fi
-#fi
+    fi
+    #fi
 
-sed -i "s/Version: *.*.*.*/Version: $version/g" DESCRIPTION
-sed -i "s/Date: *.*.*/Date: $dat/g" DESCRIPTION
-
+    sed -i "s/Version: *.*.*.*/Version: $version/g" DESCRIPTION
+    sed -i "s/Date: *.*.*/Date: $dat/g" DESCRIPTION
+else 
+    echo "   INFO: No version bump requested"
+fi
 
 ### build tarball
 if [ ! -z $build ];then
     cd $origdir
-    tarball=$(pwd)/$pckgname"_"$version".tar.gz"
+    if [ ! -z $version ];then
+	tarball=$(pwd)/$pckgname"_"$version".tar.gz"
+    else
+	tarball=$(pwd)/$pckgname"_"$origversion".tar.gz"
+    fi
     echo " "
     echo "  INFO: Creating tarball $tarball"
     echo " "

@@ -5,7 +5,7 @@ bump the version of an R-package and optionally build tarball and add it to a dr
 ##Usage
 ```
 
-packageVersion.sh -p package_dir [-d ] [-v new_version][ -h] [-f ] [-s] [-b] [-r] [-u dratdir] [-h]
+Usage: packageVersion.sh -p package_dir [-d ] [-v new_version][ -h] [-f ] [-s] [-b] [-r] [-u dratdir] [-h]
  
     -p package_dir     select package directory
     -d                 bump version to daily
@@ -16,4 +16,7 @@ packageVersion.sh -p package_dir [-d ] [-v new_version][ -h] [-f ] [-s] [-b] [-r
     -r                 do not (re)build package vignette
     -u dratdir         specify local drat repo: update drat repo
     -h                 print this help
+ 
+ Details: if -v and -d are not set, the tarball will be created and (if -u flag is set) added to the specified drat directory
+
  ```
