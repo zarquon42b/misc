@@ -4,9 +4,7 @@ bump the version of an R-package and optionally build tarball and add it to a dr
 
 ##Usage
 ```
-
- Usage: packageVersion.sh -p package_dir [-d ] [-v new_version][ -h] [-f ] [-s] [-b] [-r] [-u dratdir] [-h]
- 
+Usage: packageVersion.sh -p package_dir [-dfsbrh] [-v new_version] [-u dratdir] [-m YYYY-MM-DD] 
     -p package_dir     select package directory
     -d                 bump version to daily
     -v new_version     specify new version number
@@ -17,9 +15,9 @@ bump the version of an R-package and optionally build tarball and add it to a dr
     -u dratdir         specify local drat repo: update drat repo
     -c                 commit changes in dratrepo (if it is a git repo)
     -o                 commit and push changes in datrepo (if it is a git repo)
+    -m date            set custom release date (other than actual date) formatted as YYYY-MM-DD
     -h                 print this help
-
  
  Details: if -v and -d are not set, the tarball will be created and (if -u flag is set) added to the specified drat directory
-
- ```
+ 
+```

@@ -1,9 +1,10 @@
 #! /bin/bash
-pckgname="nix"
+
 
 function usage {
     echo " "
-    echo " Usage: packageVersion.sh -p package_dir [-d ] [-v new_version][ -h] [-f ] [-s] [-b] [-r] [-u dratdir] [-h]"
+    echo " "
+
     echo " "
     echo "    -p package_dir     select package directory"
     echo "    -d                 bump version to daily"
@@ -15,6 +16,7 @@ function usage {
     echo "    -u dratdir         specify local drat repo: update drat repo"
     echo "    -c                 commit changes in dratrepo (if it is a git repo)"
     echo "    -o                 commit and push changes in datrepo (if it is a git repo)"
+    echo "    -m date            set custom release date (other than actual date) formatted as YYYY-MM-DD"
     echo "    -h                 print this help"
     echo " "
     echo " Details: if -v and -d are not set, the tarball will be created and (if -u flag is set) added to the specified drat directory"
@@ -32,11 +34,11 @@ roxypox () {
     fi
 
     if [ $type == "full" ]; then
-	Rscript -e 'require(devtools);require(methods);document(".")'
+	Rscript -e 'require(devtools);require(methods);document(".")' &> /dev/null
     else
-	Rscript -e 'require(roxygen2);require(methods);roxygenise(".")'
+	Rscript -e 'require(roxygen2);require(methods);roxygenise(".")' &> /dev/null
     fi
-
+    
 }
 stripspace () {
     stripit=$(echo -e "${1}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
@@ -88,10 +90,12 @@ testvercomp () {
         echo "pass"
     fi
 }
-
+main () {
+pckgname="nix"
+dat=$(date +%Y-%m-%d)
 daily=0
 force=0
-while getopts ":p:v:dhfsbru:co" opt; do
+while getopts ":p:v:dhfsbru:com:" opt; do
     case "$opt" in
         p)  packagedir=$OPTARG;;
         v)  newvn=$OPTARG ;;
@@ -110,6 +114,8 @@ while getopts ":p:v:dhfsbru:co" opt; do
 	o) push=1
 	    commit=1
 	    ;;
+	m) dat=$OPTARG
+	    echo $OPTARG;;
 	: ) echo "Missing option argument for -$OPTARG" >&2; exit 1
 	    
     esac
@@ -124,11 +130,13 @@ fi
 echo "   INFO: Selected directory is $packagedir"
 
 
-
+datstring=$(date -d $dat +%y%m%d)
 origdir=$(pwd)
 cd $packagedir
 pckgname=$(grep ^Package: DESCRIPTION | awk 'BEGIN {FS=":"};{print $2}')
 pckgname="$(echo -e "${pckgname}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+local origdate=$(stripspace $(grep ^Date: DESCRIPTION | awk 'BEGIN {FS=":"};{print $2}'))
+
 ### select package to build
 if [ ! -e "R/$pckgname-package.R" ];then
     noR=1
@@ -137,8 +145,7 @@ if [ ! -e "R/$pckgname-package.R" ];then
     
 fi
 
-dat=$(date +%Y-%m-%d)
-datstring=$(date +%y%m%d)
+
 
 
 vn=$(grep Version: DESCRIPTION)
@@ -183,6 +190,10 @@ if [ ! -z $version ];then
 	sed -i "s/Version: \\\tab *.*.*\\\cr/Version: \\\tab $version\\\cr/g" $target
 	sed -i "s/Date: \\\tab *.*.*\\\cr/Date: \\\tab $dat\\\cr/g" $target
 	roxypox  $simple 
+	if [ ! $? -eq 0 ];then
+	    echo "   ERROR: roxygenization failed"
+	    exit 1
+	fi 
 	
     fi
     #fi
@@ -202,10 +213,16 @@ if [ ! -z $build ];then
 	tarball=$(pwd)/$pckgname"_"$origversion".tar.gz"
     fi
     echo " "
-    echo "  INFO: Creating tarball $tarball"
+    echo "   INFO: Creating tarball $tarball"
     echo " "
     
-    R CMD build $Ropts$packagedir 
+    R CMD build $Ropts$packagedir  > /dev/null
+    if [ ! $? -eq 0 ];then
+	"   ERROR: building  tarball failed. Reverting changes"
+	$0 -p $packagedir -v $origversion -f -m $origdate
+	exit 1
+    fi
+# > /dev/null
 fi
 
 if [ ! -z $dratdir ];then
@@ -252,3 +269,5 @@ if [ ! -z $dratdir ];then
 	fi
     fi
 fi
+}
+main $@
