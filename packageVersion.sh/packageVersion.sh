@@ -13,6 +13,8 @@ function usage {
     echo "    -b                 build package tarball"
     echo "    -r                 do not (re)build package vignette"
     echo "    -u dratdir         specify local drat repo: update drat repo"
+    echo "    -c                 commit changes in dratrepo (if it is a git repo)"
+    echo "    -o                 commit and push changes in datrepo (if it is a git repo)"
     echo "    -h                 print this help"
     echo " "
     echo " Details: if -v and -d are not set, the tarball will be created and (if -u flag is set) added to the specified drat directory"
@@ -89,7 +91,7 @@ testvercomp () {
 
 daily=0
 force=0
-while getopts ":p:v:dhfsbru:" opt; do
+while getopts ":p:v:dhfsbru:co" opt; do
     case "$opt" in
         p)  packagedir=$OPTARG;;
         v)  newvn=$OPTARG ;;
@@ -103,6 +105,10 @@ while getopts ":p:v:dhfsbru:" opt; do
 	r)  Ropts="--no-build-vignettes ";;
 	u)  dratdir=$OPTARG
 	    build=2
+	    ;;
+	c) commit=1;;
+	o) push=1
+	    commit=1
 	    ;;
 	: ) echo "Missing option argument for -$OPTARG" >&2; exit 1
 	    
@@ -177,7 +183,7 @@ if [ ! -z $version ];then
 	sed -i "s/Version: \\\tab *.*.*\\\cr/Version: \\\tab $version\\\cr/g" $target
 	sed -i "s/Date: \\\tab *.*.*\\\cr/Date: \\\tab $dat\\\cr/g" $target
 	roxypox  $simple 
-    
+	
     fi
     #fi
 
@@ -203,11 +209,46 @@ if [ ! -z $build ];then
 fi
 
 if [ ! -z $dratdir ];then
+    if [ -d $dratdir/.git ]; then
+	gitrepo=1
+	echo " "
+	echo "  INFO: Git repo found"
+	cd $dratdir
+	## check if a gh-pages branch exists
+	curbranch=$(git rev-parse --abbrev-ref HEAD)
+	ghp=$(git branch | cut -c 3- | grep gh-pages)
+	if [ ! -z $ghp ];then
+	    if  [ $ghp != $curbranch ];then
+		echo "   INFO: checking out branch gh-pages"
+		git checkout gh-pages
+		ghchange=1
+	    fi
+	fi
+    fi
     echo "  INFO: Updating drat repo at $dratdir"
     Rscript -e "drat::insertPackage('$tarball','$dratdir')"
     if [ -z $remove ];then
 	echo "  INFO: removing $tarball as only a drat update is requested"
 	rm $tarball
     fi
-    
+    if [ ! -z $commit ];then
+	cd $dratdir
+	git add src/contrib/$(basename $tarball)
+	echo " "
+	echo "  INFO: Commiting $(basename $tarball)"
+	echo " "
+	git commit -a -m "added version $version of $pckgname"
+	if [ ! -z $push ];then
+	    git push
+	fi
+    fi
+    if [ ! -z $ghchange ];then
+	echo " "
+	if [ -z $commit ];then
+	    echo "   INFO: Please commit your changes before changing back to branch $curbranch"
+	else
+	    echo "   INFO: Switching back to $curbranch"
+	    git checkout $curbranch
+	fi
+    fi
 fi
