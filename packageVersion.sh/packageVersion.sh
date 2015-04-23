@@ -97,7 +97,7 @@ daily=0
 force=0
 while getopts ":p:v:dhfsbru:com:" opt; do
     case "$opt" in
-        p)  packagedir=$OPTARG;;
+        p)  packagedir=$(realpath $OPTARG);;
         v)  newvn=$OPTARG ;;
 	d)  daily=1;;
 	h)  usage;;
@@ -107,7 +107,7 @@ while getopts ":p:v:dhfsbru:com:" opt; do
 	    remove=0
 	    ;;
 	r)  Ropts="--no-build-vignettes ";;
-	u)  dratdir=$OPTARG
+	u)  dratdir=$(realpath $OPTARG)
 	    build=2
 	    ;;
 	c) commit=1;;
@@ -246,6 +246,7 @@ if [ ! -z $dratdir ];then
     Rscript -e "drat::insertPackage('$tarball','$dratdir')"
     if [ -z $remove ];then
 	echo "  INFO: removing $tarball as only a drat update is requested"
+	version=$origversion
 	rm $tarball
     fi
     if [ ! -z $commit ];then
@@ -253,7 +254,7 @@ if [ ! -z $dratdir ];then
 	git add src/contrib/$(basename $tarball)
 	echo " "
 	echo "  INFO: Commiting $(basename $tarball)"
-	echo " "
+	echo "  $version"
 	git commit -a -m "added version $version of $pckgname"
 	if [ ! -z $push ];then
 	    git push
