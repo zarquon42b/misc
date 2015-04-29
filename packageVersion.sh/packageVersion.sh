@@ -246,7 +246,9 @@ if [ ! -z $dratdir ];then
     Rscript -e "drat::insertPackage('$tarball','$dratdir')"
     if [ -z $remove ];then
 	echo "  INFO: removing $tarball as only a drat update is requested"
-	version=$origversion
+	if [ -z $version ];then
+	    version=$origversion
+	fi
 	rm $tarball
     fi
     if [ ! -z $commit ];then
