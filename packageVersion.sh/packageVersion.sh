@@ -4,7 +4,7 @@
 function usage {
     echo " "
     echo " "
-
+    echo " Usage: packageVersion.sh -p package_dir [-dfsbrh] [-v new_version] [-u dratdir] [-m YYYY-MM-DD]" 
     echo " "
     echo "    -p package_dir     select package directory"
     echo "    -d                 bump version to daily"
