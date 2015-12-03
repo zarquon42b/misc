@@ -1,0 +1,57 @@
+#! /bin/bash
+charset="iso-8859-1"
+clean=true
+libreoffice=false
+convert=false
+while getopts ":i:cl" opt; do
+    case "$opt" in
+	: ) echo "Missing option argument for -$OPTARG" >&2; exit 1;;
+
+        i)  lyxfile=$OPTARG;;
+	l)  libreoffice=true;;
+	c)  convert=true;;  
+	*  ) echo "Unimplemented option: -$OPTARG" >&2; exit 1;;
+    esac
+done
+echo $lyxfile
+if [ -z $lyxfile ]; then
+    echo "file does not exist"
+    exit 1
+fi
+if [ ! -f $lyxfile ]; then
+    echo "file does not exist"
+    exit 1
+fi
+#texfile=$1
+#lyxfile=$1
+## convert lyx to plain tex
+lyx -e pdflatex $lyxfile
+
+## get file without suffix
+base=${lyxfile%.lyx}
+
+texfile="$base.tex"
+## complile
+pdflatex $texfile
+
+## run bibex
+auxfile="$base.aux"
+bibtex $auxfile
+
+##convert to html
+htlatex $texfile
+
+## cleanup
+
+rm $base.4ct  $base.aux  $base.blg  $base.dvi   $base.idv  $base.log $base.xref $base.4tc  $base.bbl  $base.tmp $base.lg $base.pdf
+
+if [ $libreoffice ];then
+    if [ convert ];then 
+	iconv -f ISO8859-1 -t utf-8 $base.html > tempfile.html
+	sed -i "s|charset=$charset|charset=utf-8|g" tempfile.html
+    ## remove comments
+    fi
+    sed -i -e :a -re 's/<!--.*?-->//g;/<!--/N;//ba' tempfile.html
+    unoconv -d document -f odt -o $base.odt tempfile.html
+    rm tempfile.html
+fi
