@@ -8,7 +8,7 @@ while getopts ":i:cl" opt; do
 	: ) echo "Missing option argument for -$OPTARG" >&2; exit 1;;
 
         i)  lyxfile=$OPTARG;;
-	l)  libreoffice=true;;
+	#l)  libreoffice=true;;
 	c)  convert=true;;  
 	*  ) echo "Unimplemented option: -$OPTARG" >&2; exit 1;;
     esac
@@ -25,7 +25,7 @@ fi
 #texfile=$1
 #lyxfile=$1
 ## convert lyx to plain tex
-lyx -e pdflatex $lyxfile
+lyx -e latex $lyxfile
 
 ## get file without suffix
 base=${lyxfile%.lyx}
@@ -45,13 +45,14 @@ htlatex $texfile
 
 rm $base.4ct  $base.aux  $base.blg  $base.dvi   $base.idv  $base.log $base.xref $base.4tc  $base.bbl  $base.tmp $base.lg $base.pdf
 
-if [ $libreoffice ];then
-    if [ convert ];then 
+#if [ $libreoffice ];then
+    if $convert;then 
 	iconv -f ISO8859-1 -t utf-8 $base.html > tempfile.html
 	sed -i "s|charset=$charset|charset=utf-8|g" tempfile.html
+	mv tempfile.html $base.html
     ## remove comments
     fi
-    sed -i -e :a -re 's/<!--.*?-->//g;/<!--/N;//ba' tempfile.html
-    unoconv -d document -f odt -o $base.odt tempfile.html
-    rm tempfile.html
-fi
+    sed -i -e :a -re 's/<!--.*?-->//g;/<!--/N;//ba' $base.html
+#    unoconv -d document -f odt -o $base.odt $base.html
+    #rm tempfile.html
+#fi
