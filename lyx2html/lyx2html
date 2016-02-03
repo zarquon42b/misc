@@ -32,11 +32,13 @@ base=${lyxfile%.lyx}
 
 texfile="$base.tex"
 ## complile
-pdflatex $texfile
+latex $texfile
 
 ## run bibex
 auxfile="$base.aux"
 bibtex $auxfile
+sed -i "s|\\\usepackage{breakurl}|%\\\usepackage{breakurl}|g" $texfile 
+
 
 ##convert to html
 htlatex $texfile
