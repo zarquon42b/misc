@@ -8,6 +8,6 @@ You need to have texlive and tex4ht installed on your system in order to run thi
 
 simply run the script from within the folder the lyx file resides.
 
-       lyx2html -i myfile.lyx [-l] [-c]
+       lyx2html -i myfile.lyx [-c]
        
        -c convert from iso-9859-15
